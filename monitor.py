@@ -613,7 +613,10 @@ def alert_auth(cfg, code, detail=""):
             title = "⚠️ 钟山烟语监控被风控拦截（%s）" % code
             body = ("<p>接口返回 %s（疑似风控）。脚本已自行停手，没有重试。</p>"
                     "<p>建议：暂停几小时后再看，别手动狂刷页面。</p>" % code)
-        ok, info = push_wechat(cfg, title, body)
+        # 告警只走邮箱，不打扰微信/群组
+        mail_cfg = dict(cfg)
+        mail_cfg["push_channels"] = ["mail"]
+        ok, info = push_wechat(mail_cfg, title, body)
         dump_json(ALERT_PATH, {"ts": now_ts, "code": str(code)})
         return ok, info
     except Exception as e:
