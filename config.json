@@ -1,5 +1,5 @@
 {
-  "access_token": "7l5nxVXTrPu_1BHtkeJJbke0PWo",
+  "access_token": "uzLZLcvGiF8yXdYD0VlaMtYIo64",
   "refresh_token": "xK-NVLzyW0y78m4wQTFzp1FiSXo",
   "low_stock_threshold": 10,
   "watch_keywords": [],
@@ -10,11 +10,12 @@
     "12453752445",
     "12453752446",
     "12453883970",
-    "12453741712"
+    "12453741712",
+    "12453752450"
   ],
   "device_id": "d235d61462324cacbf8d47ee3ca8f7cb",
   "recv_id": "15C16E0017F38000",
-  "token_expires_at": 1794127167,
+  "token_expires_at": 1794127632,
   "uuid": "1567653817797287936",
   "pushplus_token": "01159c9aa56a45c4bfdd772c75543afd",
   "pushplus_topic": "12345678",
