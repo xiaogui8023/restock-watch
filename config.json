@@ -1,0 +1,37 @@
+{
+  "access_token": "t_r_zByfiE4dmeS_yJXt04fK_8E",
+  "refresh_token": "xK-NVLzyW0y78m4wQTFzp1FiSXo",
+  "low_stock_threshold": 10,
+  "watch_keywords": [],
+  "note": "access_token / refresh_token 为「钟山烟语」会员登录态，脚本会自动用 refresh_token 续期；两者都失效时需要重新获取。",
+  "stock_limit": 3,
+  "watch_ids": [
+    "12453741056",
+    "12453752445",
+    "12453752446",
+    12453883970
+  ],
+  "device_id": "d235d61462324cacbf8d47ee3ca8f7cb",
+  "recv_id": "15C16E0017F38000",
+  "token_expires_at": 1794109575,
+  "uuid": "1567653817797287936",
+  "pushplus_token": "01159c9aa56a45c4bfdd772c75543afd",
+  "pushplus_topic": "12345678",
+  "push_mode": "change",
+  "stock_delta_threshold": 1,
+  "quiet_start_hour": 0,
+  "quiet_end_hour": 8,
+  "quiet_hours": [
+    "00:00",
+    "08:00"
+  ],
+  "push_channels": [
+    "wechat",
+    "mail"
+  ],
+  "poll_interval_sec": 900,
+  "poll_window": [
+    "08:00",
+    "23:50"
+  ]
+}
