@@ -1,5 +1,5 @@
 {
-  "access_token": "t_r_zByfiE4dmeS_yJXt04fK_8E",
+  "access_token": "JG6Lil-QLlakfSRC40SsG9QE_aI",
   "refresh_token": "xK-NVLzyW0y78m4wQTFzp1FiSXo",
   "low_stock_threshold": 10,
   "watch_keywords": [],
@@ -13,7 +13,7 @@
   ],
   "device_id": "d235d61462324cacbf8d47ee3ca8f7cb",
   "recv_id": "15C16E0017F38000",
-  "token_expires_at": 1794109575,
+  "token_expires_at": 1794112285,
   "uuid": "1567653817797287936",
   "pushplus_token": "01159c9aa56a45c4bfdd772c75543afd",
   "pushplus_topic": "12345678",
@@ -33,5 +33,8 @@
   "poll_window": [
     "08:00",
     "23:50"
+  ],
+  "pushplus_topics": [
+    "001"
   ]
 }
