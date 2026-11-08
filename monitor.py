@@ -31,12 +31,28 @@ import random
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import requests
 import struct
 
+# 云函数容器默认可能是 UTC，强制用北京时间，否则推送里的时间会差 8 小时
+try:
+    os.environ["TZ"] = "Asia/Shanghai"
+    time.tzset()
+except Exception:
+    pass
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+CST = timezone(timedelta(hours=8))   # 固定北京时间，不依赖容器时区设置
+
+
+def now_bj():
+    """云函数容器常是 UTC，这里一律取北京时间（UTC+8）。"""
+    return datetime.now(CST)
+
+
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 POOL_PATH = os.path.join(BASE_DIR, "state", "sku_pool.json")
 STOCK_PATH = os.path.join(BASE_DIR, "state", "avail_snapshot.json")
@@ -68,7 +84,7 @@ _DEVICE_ID = None
 
 
 def log(m):
-    print("[%s] %s" % (datetime.now().strftime("%H:%M:%S"), m), flush=True)
+    print("[%s] %s" % (now_bj().strftime("%H:%M:%S"), m), flush=True)
 
 
 def load_json(p, default):
@@ -439,7 +455,7 @@ def in_quiet_hours(cfg, now=None):
         start, end = q[0], q[1]
     except Exception:
         return False
-    now = now or datetime.now()
+    now = now or now_bj()
     hm = now.strftime("%H:%M")
     if start <= end:
         return start <= hm < end
@@ -448,7 +464,7 @@ def in_quiet_hours(cfg, now=None):
 
 def in_quiet_hours(cfg, now=None):
     """免打扰时段（默认 0:00-08:00），时段内不推送任何消息"""
-    now = now or datetime.now()
+    now = now or now_bj()
     start = int(cfg.get("quiet_start_hour", 0))
     end = int(cfg.get("quiet_end_hour", 8))
     h = now.hour
@@ -658,7 +674,7 @@ def main():
         return 2
 
     pool = load_json(POOL_PATH, {}).get("skus", {})
-    run_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    run_time = now_bj().strftime("%Y-%m-%d %H:%M:%S")
 
     try:
         if args.scan:
