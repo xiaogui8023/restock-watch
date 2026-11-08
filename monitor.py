@@ -367,24 +367,38 @@ def push_wechat(cfg, title, content):
         return False, "未配置 pushplus_token"
 
     channels = [str(c).strip() for c in (cfg.get("push_channels") or ["wechat"]) if str(c).strip()]
+    # 群组可配多个：pushplus_topic（单个）+ pushplus_topics（列表），去重保序
+    topics = []
+    if cfg.get("pushplus_topic"):
+        topics.append(str(cfg["pushplus_topic"]).strip())
+    for t in (cfg.get("pushplus_topics") or []):
+        t = str(t).strip()
+        if t and t not in topics:
+            topics.append(t)
+    topics = [t for t in topics if t]
+
     ok_list, fail_list = [], []
     for tk in tokens:
         for ch in channels:
             payload = {"token": tk, "title": title, "content": content,
                        "template": "html", "channel": ch}
-            if cfg.get("pushplus_topic") and ch == "wechat":
-                payload["topic"] = cfg["pushplus_topic"]
             if ch == "mail" and cfg.get("email_to"):
                 payload["to"] = cfg["email_to"]
-            try:
-                r = requests.post(PUSHPLUS_URL, json=payload, timeout=15)
-                j = r.json()
-                if int(j.get("code") or 0) == 200:
-                    ok_list.append("%s/%s" % (tk[-6:], ch))
-                else:
-                    fail_list.append("%s/%s:%s" % (tk[-6:], ch, j.get("msg")))
-            except Exception as e:
-                fail_list.append("%s/%s:%s" % (tk[-6:], ch, e))
+            # wechat 渠道：有群组就逐个群组推，没有就推给自己
+            sends = [dict(payload, topic=t) for t in topics] if (ch == "wechat" and topics) else [payload]
+            for i, body in enumerate(sends):
+                tag = "%s/%s" % (tk[-6:], ch)
+                if ch == "wechat" and topics:
+                    tag = "%s/%s/%s" % (tk[-6:], ch, topics[i])
+                try:
+                    r = requests.post(PUSHPLUS_URL, json=body, timeout=15)
+                    j = r.json()
+                    if int(j.get("code") or 0) == 200:
+                        ok_list.append(tag)
+                    else:
+                        fail_list.append("%s:%s" % (tag, j.get("msg")))
+                except Exception as e:
+                    fail_list.append("%s:%s" % (tag, e))
 
     if fail_list:
         return (bool(ok_list),
