@@ -172,7 +172,9 @@ CLIENT_SECRET = "4XeYEUQE6"
 
 def refresh_access_token(cfg):
     """用 refresh_token 换新 access_token（前端 10004 时走的就是这条链路）"""
-    rt = (cfg.get("refresh_token") or "").strip()
+    # 云函数环境可直接用环境变量 REFRESH_TOKEN 覆盖 config.json，
+    # 这样换 token 只需改控制台环境变量，不用重新打包上传
+    rt = (os.environ.get("REFRESH_TOKEN") or cfg.get("refresh_token") or "").strip()
     if not rt:
         raise ApiError("NO_REFRESH", "缺少 refresh_token，请在微信里重新登录后复制 cookie 里的 refresh_token")
     payload = {
