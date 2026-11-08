@@ -5,6 +5,11 @@ on:
     # 每 15 分钟一次（UTC 时区，24 小时都跑；脚本自己按 08:00-23:50 / 夜间免打扰判断是否推送）
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "check=正常巡检 / test_push=只发一条测试消息"
+        default: "check"
+        required: false
 
 concurrency:
   group: watch-restock
@@ -28,7 +33,14 @@ jobs:
       - name: 安装依赖
         run: pip install -r requirements.txt
 
+      - name: 测试推送
+        if: ${{ github.event.inputs.mode == 'test_push' }}
+        env:
+          TZ: Asia/Shanghai
+        run: python test_push.py
+
       - name: 巡检一轮
+        if: ${{ github.event.inputs.mode != 'test_push' }}
         env:
           TZ: Asia/Shanghai
         run: python monitor.py --stock
