@@ -3,7 +3,7 @@ name: 钟山烟语补货巡检
 on:
   schedule:
     # 每 15 分钟一次（UTC 时区，24 小时都跑；脚本自己按 08:00-23:50 / 夜间免打扰判断是否推送）
-    - cron: "*/15 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       mode:
