@@ -365,7 +365,7 @@ def fetch_quota(sid, token):
 PUSHPLUS_URL = "http://www.pushplus.plus/send"
 
 
-def push_wechat(cfg, title, content):
+def push_wechat(cfg, title, content, template="html"):
     """推送通知。
 
     渠道由 config.json 的 push_channels 控制（默认 ["wechat"]）：
@@ -399,7 +399,7 @@ def push_wechat(cfg, title, content):
     for tk in tokens:
         for ch in channels:
             payload = {"token": tk, "title": title, "content": content,
-                       "template": "html", "channel": ch}
+                       "template": template, "channel": ch}
             if ch == "mail" and cfg.get("email_to"):
                 payload["to"] = cfg["email_to"]
             # wechat 渠道：有群组就逐个群组推，没有就推给自己
@@ -473,6 +473,25 @@ def in_quiet_hours(cfg, now=None):
     if start < end:
         return start <= h < end
     return h >= start or h < end          # 跨零点的情况
+
+
+SHOP_URL = "https://m.jszyshop.com"
+
+
+def item_message(kind, c, run_time, note=""):
+    """单件商品的极简推送文案：标题【状态】商品名，正文三行。"""
+    name = (c.get("name") or "").strip()
+    tm = run_time[5:16]          # 2026-11-08 17:38 -> 11-08 17:38
+    if kind in RESTOCK_TYPES:
+        return "【补货】%s" % name, "刚补货，可以兑换了\n时间: %s\n商城: %s" % (tm, SHOP_URL)
+    if kind == "变缺货":
+        return "【缺货】%s" % name, "刚刚转缺货了\n时间: %s\n商城: %s" % (tm, SHOP_URL)
+    if kind == "下架":
+        return "【下架】%s" % name, "该商品已下架\n时间: %s\n商城: %s" % (tm, SHOP_URL)
+    if kind == "纳入监控":
+        return "【纳入监控】%s" % name, "已开始监控，当前: %s\n时间: %s\n商城: %s" % (
+            c.get("state"), tm, SHOP_URL)
+    return "【变动】%s" % name, "%s\n时间: %s\n商城: %s" % (note or "状态变化", tm, SHOP_URL)
 
 
 def format_restock(changes, cur, run_time):
@@ -757,24 +776,18 @@ def main():
         print("免打扰时段（%02d:00-%02d:00），本轮不推送" % (
             int(cfg_now.get("quiet_start_hour", 0)), int(cfg_now.get("quiet_end_hour", 8))))
 
-    if not args.no_push and hits and not quiet:
-        ok, info = push_wechat(cfg_now, "🔔 补货通知：%d 件商品可兑换了" % len(hits),
-                               format_restock(changes, cur, run_time))
-        print("补货通知：" + info)
-
-    if not args.restock_only and not args.no_push and not quiet:
+    if not args.no_push and not quiet:
         mode = (cfg_now.get("push_mode") or "always").strip()
         # 只有真实状态变动才推：取数失败（失联）不算变动，免得误报
         push_changes = [c for c in changes if c[0] != "失联"]
         if mode == "restock":
-            # 只在有货时提醒：缺货、下架一律不推；
-            # 有货时上一条「补货通知」已经发过，这里不再重复发状态播报
-            push_changes = []
-        if mode == "always" or bool(push_changes):
-            title = ("钟山烟语补货提醒（%d 条变动）" % len(push_changes)) if push_changes \
-                else "钟山烟语状态播报（无变动）"
-            ok, info = push_wechat(cfg_now, title, format_push(push_changes, cur, run_time, mv))
-            print("推送：" + info)
+            # 只在补货/重新上架时提醒
+            push_changes = [c for c in push_changes if c[0] in RESTOCK_TYPES]
+        # 一件商品一条消息，纯文本三行，不再发聚合长消息
+        for kind, c, note in push_changes:
+            title, body = item_message(kind, c, run_time, note)
+            ok, info = push_wechat(cfg_now, title, body, template="txt")
+            print("推送 [%s] %s：%s" % (kind, c["name"][:18], info))
 
 
     print("=" * 58)
