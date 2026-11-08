@@ -590,6 +590,36 @@ def save_report(md, run_time):
 
 
 # ------------------------------------------------------------------ main
+
+ALERT_PATH = os.path.join(BASE_DIR, "state", "alert_flag.json")
+
+
+def alert_auth(cfg, code, detail=""):
+    """凭证失效 / 风控时，主动推一条告警（微信+邮件+群组），6 小时内不重复刷屏。"""
+    try:
+        last = load_json(ALERT_PATH, {})
+        now_ts = int(time.time())
+        if now_ts - int(last.get("ts") or 0) < 6 * 3600 and last.get("code") == str(code):
+            return True, "6 小时内已告警过（%s），不重复发送" % code
+        if str(code) == "10004":
+            title = "⚠️ 钟山烟语监控 Token 已失效"
+            body = ("<p><b>监控已停止推送</b></p>"
+                    "<p>原因：access_token / refresh_token 失效（10004）。</p>"
+                    "<p>恢复办法：在微信打开商城重新登录，把新的 refresh_token 发给我，"
+                    "我更新 config.json 后重新上传云函数即可。</p>"
+                    "<p>这期间你可以去 GitHub 手动触发一次巡检临时顶一下。</p>"
+                    "<p>%s</p>" % (detail or ""))
+        else:
+            title = "⚠️ 钟山烟语监控被风控拦截（%s）" % code
+            body = ("<p>接口返回 %s（疑似风控）。脚本已自行停手，没有重试。</p>"
+                    "<p>建议：暂停几小时后再看，别手动狂刷页面。</p>" % code)
+        ok, info = push_wechat(cfg, title, body)
+        dump_json(ALERT_PATH, {"ts": now_ts, "code": str(code)})
+        return ok, info
+    except Exception as e:
+        return False, "告警发送失败：%s" % e
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scan", action="store_true", help="重建商品池（全部分类）")
@@ -681,6 +711,12 @@ def main():
         print("!! 接口异常：%s %s" % (e.code, e.msg))
         if e.code == "10004":
             print("   凭证失效，请在微信重新抓一次 Authorization 发我。")
+            ok, info = alert_auth(load_json(CONFIG_PATH, {}), "10004", e.msg)
+            print("   失效告警：" + info)
+        elif e.code == "10006":
+            print("   触发风控，已停止本轮。")
+            ok, info = alert_auth(load_json(CONFIG_PATH, {}), "10006", e.msg)
+            print("   风控告警：" + info)
         return 2
 
     prev = load_json(STOCK_PATH, {}).get("goods", [])
